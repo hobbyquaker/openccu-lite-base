@@ -22,9 +22,11 @@ Report bugs and send changes to [OpenCCU-Base](https://github.com/OpenCCU/OpenCC
 
 | Ref | Holds |
 | --- | --- |
-| `upstream` | OpenCCU-Base's `main`, filtered. Only ever moves forward. |
+| `upstream` | OpenCCU-Base's `main`, filtered. Written only by the sync workflow; only ever moves forward. |
+| `lite` | What openccu-lite builds from: upstream's releases, merged one by one, minus what openccu-lite reverted. Never written by a workflow. |
+| tags `<version>-lite.<N>` (`3.89.11-lite.1`, ...) | The states of `lite` openccu-lite pins, numbered per upstream version. |
 | tags (`3.89.11`, ...) | OpenCCU-Base's release tags with the same names, on the filtered commits. A tag whose commit was filtered out sits on the nearest older commit that was kept; the files under the kept paths are the same there. |
-| `main` | This readme, [`paths.txt`](paths.txt), [`filter.sh`](filter.sh) and the sync workflow. |
+| `main` | This readme, [`paths.txt`](paths.txt), [`filter.sh`](filter.sh), [`merge-pr.sh`](merge-pr.sh) and the two workflows. |
 | `meta` | `commit-map` (`<OpenCCU-Base id> <openccu-lite-base id>` per line; all zeros for a commit that was filtered out) and `ref-map`, written by every sync that changed something. |
 
 ## How it follows upstream
@@ -41,6 +43,24 @@ The workflow refuses to push anything else, and fails loudly instead, if the new
 contain the published `upstream` branch or a published tag would move. That happens only when
 `paths.txt` or `filter.sh` changed, or when OpenCCU-Base rewrote its own history. Either way it is
 a new generation of this repository, decided and done by hand, never by the sync.
+
+## The `lite` branch
+
+openccu-lite does not build from `upstream` directly but from `lite`, so that an upstream release
+reaches it only after a look at what it changes:
+
+1. The sync brings a new release tag of OpenCCU-Base (say `3.89.12`) to `upstream`.
+2. [`.github/workflows/merge-pr.yml`](.github/workflows/merge-pr.yml) (after each sync, daily and on
+   demand) opens a pull request **"Merge 3.89.12 into lite"** from a branch `merge/3.89.12` at the
+   tag, with every new commit and its `Upstream:` link. It never pushes to `lite` itself, and opens
+   a tag's pull request once; deleting the branch `merge/<tag>` has it opened again.
+3. The maintainer reviews and merges it with a merge commit. A commit openccu-lite does not take is
+   reverted on `lite` right after, with the reason in the revert's message.
+4. `lite` gets the tag `3.89.12-lite.1`; a later change to the same base (another revert, a fix
+   taken early with `git cherry-pick -x` from `upstream`) gets `-lite.2` and so on. openccu-lite's
+   `openccu-base.mk` pins such a tag.
+
+`lite` started at `3.89.11`; `3.89.11-lite.1` is that commit.
 
 ## What is kept
 

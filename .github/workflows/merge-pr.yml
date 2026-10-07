@@ -1,0 +1,44 @@
+name: merge-pr
+
+# Opens a pull request "Merge <tag> into lite" for each upstream release tag that `lite` does not
+# contain yet (merge-pr.sh). Runs after every sync, daily and on demand. It never pushes to `lite`:
+# the maintainer reviews and merges, and reverts on `lite` what openccu-lite does not take.
+
+on:
+  workflow_run:
+    workflows: [sync]
+    types: [completed]
+  schedule:
+    - cron: '47 4 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Only print what would be opened'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: merge-pr
+  cancel-in-progress: false
+
+jobs:
+  merge-pr:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out (all branches and tags)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Fetch lite and the tags
+        run: git fetch --quiet --tags origin '+refs/heads/lite:refs/remotes/origin/lite'
+      - name: Open the pull requests
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: bash merge-pr.sh
