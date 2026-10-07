@@ -11,17 +11,25 @@ build-tools/
 licenses/
 
 # every component under src/ - daemons, libraries, Tcl modules, kernel modules, device types,
-# tcl_homematic - except the WebUI ...
-regex:^src/(?!webui/)
-# ... of which only the firewall scripts are installed (/lib/libfirewall.tcl)
-src/webui/scripts/
+# tcl_homematic - except the WebUI and the daemons openccu-lite does not ship: hss_led (occulited
+# drives the status LED), eq3configd (occulited answers the discovery), ssdpd (occulited
+# announces the system)
+regex:^src/(?!(webui|hss_led|eq3configd|ssdpd)/)
 
 # the startup scripts the image installs to /bin
 bin/hm_autoconf
 bin/hm_deldev
 bin/hm_startup
 
-# installed as they are: /etc, /firmware, /opt (HMServer, HmIP)
+# installed as they are: /etc, /firmware
 etc/
 firmware/
-opt/
+
+# hmipserver (HMIPServer.jar with the ESHBridge on its classpath), its group definitions, and the
+# HmIP coprocessor updater with its data. Not HMServer.jar (the BidCos-only server openccu-lite
+# never starts), nor the WebUI's FreeMarker pages (openccu-lite brings the four group pages
+# occulited reads) or the diagrams' measurement templates
+opt/HMServer/HMIPServer.jar
+opt/HMServer/coupling/
+opt/HMServer/groups/
+opt/HmIP/

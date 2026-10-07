@@ -65,15 +65,26 @@ reaches it only after a look at what it changes:
 ## What is kept
 
 [`paths.txt`](paths.txt) is the list, with a reason for each line. In short: the CMake build
-(`CMakeLists.txt`, `cmake/`, `build-tools/`), every component under `src/` except the WebUI
-(`src/webui/`, of which only `scripts/` with `libfirewall.tcl` is kept), the startup scripts
-`bin/hm_autoconf`, `bin/hm_deldev` and `bin/hm_startup`, `etc/`, `firmware/`, `opt/` and
-`licenses/`.
+(`CMakeLists.txt`, `cmake/`, `build-tools/`), every component under `src/` except the WebUI and
+three daemons openccu-lite does not ship (`hss_led`, `eq3configd`, `ssdpd`), the startup scripts
+`bin/hm_autoconf`, `bin/hm_deldev` and `bin/hm_startup`, `etc/`, `firmware/`, hmipserver
+(`opt/HMServer/HMIPServer.jar`, `opt/HMServer/coupling/`, `opt/HMServer/groups/`), `opt/HmIP/`
+and `licenses/`.
 
-Left out: the WebUI sources and the built WebUI (`src/webui/`, `www/`), the prebuilt binaries and
-libraries under `bin/<platform>/` and `lib/<platform>/` (ReGaHss among them; openccu-lite compiles
-the rest from `src/`), `usr/` (built from `src/tcl_homematic`), OpenCCU-Base's own `.github/`,
-`tests/`, `Makefile`, `CMakePresets.json`, `README.md` and `.gitignore`.
+Left out: the WebUI sources and the built WebUI (`src/webui/`, `www/`), `src/hss_led`,
+`src/eq3configd` and `src/ssdpd`, `opt/HMServer/HMServer.jar` (the BidCos-only server
+openccu-lite never starts), the WebUI's FreeMarker pages `opt/HMServer/pages/` and the diagrams'
+`opt/HMServer/measurement/`, the prebuilt binaries and libraries under `bin/<platform>/` and
+`lib/<platform>/` (ReGaHss among them; openccu-lite compiles the rest from `src/`), `usr/` (built
+from `src/tcl_homematic`), OpenCCU-Base's own `.github/`, `tests/`, `Makefile`,
+`CMakePresets.json`, `README.md` and `.gitignore`.
+
+**One rewrite, on 2026-10-07:** the first published history (head `7a30437`, `3.89.11` at
+`59850dc`, 508 commits) still had `src/webui/scripts/`, `src/hss_led`, `src/eq3configd`,
+`src/ssdpd`, `HMServer.jar` and HMServer's pages and measurement templates, which openccu-lite
+built or installed and then deleted from its image or never used. They were taken out the same
+day, before anything built from this repository, and `upstream`, the tags, `lite` and `meta` were
+replaced once. `paths.txt` is final since: a change to it would rewrite the history again, which the sync refuses.
 
 ## Licence
 
