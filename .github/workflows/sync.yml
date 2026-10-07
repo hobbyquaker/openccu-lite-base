@@ -1,0 +1,128 @@
+name: sync
+
+# Follows OpenCCU-Base: clones it completely, filters it with filter.sh and paths.txt from this
+# branch, and pushes the result to `upstream` and the tags - fast-forward only. A filtered history
+# that does not contain the published one (paths.txt or the filter changed, or upstream rewrote its
+# history) is refused, loudly, and nothing is pushed. The commit map goes to the `meta` branch.
+
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_URL: https://github.com/OpenCCU/OpenCCU-Base.git
+  # git-filter-repo is one Python file; pinned by tag and checksum so the filter stays deterministic.
+  FILTER_REPO_VERSION: v2.47.0
+  FILTER_REPO_SHA256: 67447413e273fc76809289111748870b6f6072f08b17efe94863a92d810b7d94
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+          fetch-depth: 1
+
+      - name: Install git-filter-repo
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl -fsSL -o "$RUNNER_TEMP/bin/git-filter-repo" \
+            "https://raw.githubusercontent.com/newren/git-filter-repo/${FILTER_REPO_VERSION}/git-filter-repo"
+          echo "${FILTER_REPO_SHA256}  $RUNNER_TEMP/bin/git-filter-repo" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/bin/git-filter-repo"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: Clone upstream (main and its tags, complete)
+        run: |
+          set -euo pipefail
+          git clone --single-branch --branch main "$UPSTREAM_URL" filtered
+          git -C filtered log -1 --format='upstream main: %H %cI'
+
+      - name: Filter
+        run: |
+          set -euo pipefail
+          bash main/filter.sh filtered
+          git -C filtered log -1 --format='filtered main: %H'
+
+      - name: Check fast-forward and push
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd filtered
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          origin="https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git remote add origin "$origin"
+          git fetch --quiet --no-tags origin '+refs/heads/upstream:refs/remotes/origin/upstream' || true
+          git fetch --quiet origin '+refs/tags/*:refs/remotes/origin-tags/*'
+
+          new=$(git rev-parse refs/heads/main)
+          if old=$(git rev-parse -q --verify refs/remotes/origin/upstream); then
+            if ! git merge-base --is-ancestor "$old" "$new"; then
+              echo "::error::the filtered history does not contain the published upstream branch ($old); paths.txt, filter.sh or upstream's history changed. Nothing pushed."
+              exit 1
+            fi
+          fi
+
+          # Published tags never move.
+          push_tags=()
+          for t in $(git tag); do
+            mine=$(git rev-parse "refs/tags/$t^{commit}")
+            if theirs=$(git rev-parse -q --verify "refs/remotes/origin-tags/$t^{commit}"); then
+              if [ "$mine" != "$theirs" ]; then
+                echo "::error::tag $t would move from $theirs to $mine. Nothing pushed."
+                exit 1
+              fi
+            else
+              push_tags+=("refs/tags/$t:refs/tags/$t")
+            fi
+          done
+
+          if [ "${old:-}" = "$new" ] && [ ${#push_tags[@]} -eq 0 ]; then
+            echo "upstream is up to date at $new"
+          else
+            # no --force: the server refuses a non-fast-forward as well
+            git push --atomic origin "$new:refs/heads/upstream" "${push_tags[@]}"
+            echo "pushed upstream ${old:-(new)} -> $new, tags: ${push_tags[*]:-none}"
+          fi
+          echo "$new" > ../upstream-head
+
+      - name: Publish the commit map on meta
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          origin="https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git init --quiet meta
+          cd meta
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git remote add origin "$origin"
+          if git fetch --quiet --depth=1 origin meta; then
+            git checkout --quiet -B meta FETCH_HEAD
+          else
+            git checkout --quiet --orphan meta
+          fi
+          # commit-map: "<upstream id> <openccu-lite-base id>", 0000... for a commit the filter dropped
+          cp ../filtered/.git/filter-repo/commit-map commit-map
+          cp ../filtered/.git/filter-repo/ref-map ref-map
+          git add commit-map ref-map
+          if git diff --cached --quiet; then
+            echo "commit map unchanged"
+          else
+            git commit --quiet -m "commit map for upstream $(cat ../upstream-head)"
+            git push origin HEAD:refs/heads/meta
+          fi

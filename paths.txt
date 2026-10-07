@@ -1,0 +1,27 @@
+# The paths of OpenCCU-Base that openccu-lite builds from, for git filter-repo --paths-from-file.
+# A commit that touched none of them is filtered out. Changing this list rewrites the whole
+# history: the sync then refuses to push (see README.md), so a change is a new generation.
+
+# the CMake build: the top-level list, the version header generator, the device type stripper
+CMakeLists.txt
+cmake/
+build-tools/
+
+# the licences (HMSL 2.0, GPL 2.0, LGPL 2.1) and their index
+licenses/
+
+# every component under src/ - daemons, libraries, Tcl modules, kernel modules, device types,
+# tcl_homematic - except the WebUI ...
+regex:^src/(?!webui/)
+# ... of which only the firewall scripts are installed (/lib/libfirewall.tcl)
+src/webui/scripts/
+
+# the startup scripts the image installs to /bin
+bin/hm_autoconf
+bin/hm_deldev
+bin/hm_startup
+
+# installed as they are: /etc, /firmware, /opt (HMServer, HmIP)
+etc/
+firmware/
+opt/
