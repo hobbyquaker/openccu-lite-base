@@ -1,6 +1,8 @@
 # The paths of OpenCCU-Base that openccu-lite builds from, for git filter-repo --paths-from-file.
 # A commit that touched none of them is filtered out. Changing this list rewrites the whole
 # history: the sync then refuses to push (see README.md), so a change is a new generation.
+# It was changed twice, both times before anything was built from the old one: on 2026-10-07 and
+# on 2026-10-08 (the WebUI's files addons read). This is the final list.
 
 # the CMake build: the top-level list, the version header generator, the device type stripper
 CMakeLists.txt
@@ -33,3 +35,14 @@ opt/HMServer/HMIPServer.jar
 opt/HMServer/coupling/
 opt/HMServer/groups/
 opt/HmIP/
+
+# the WebUI's files that addons read on a CCU, which openccu-lite installs at the CCU's paths under
+# /www and serves read-only (openccu-lite task 331): the device pictures, the device descriptions
+# with the two scripts that generate DEVDB.tcl from them, as OpenCCU's build does, the WebUI's
+# translations and its stringtable. Nothing else of the WebUI.
+src/webui/www/config/img/devices/
+src/webui/www_source/config/devdescr/
+src/webui/www_source/create_devdb_tcl.tcl
+src/webui/www_source/utf82ansi.py
+regex:^src/webui/www/webui/js/lang/[^/]+/translate\.lang[^/]*\.js$
+src/webui/www/config/stringtable_de.txt

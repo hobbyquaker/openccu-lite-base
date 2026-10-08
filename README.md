@@ -69,9 +69,14 @@ reaches it only after a look at what it changes:
 three daemons openccu-lite does not ship (`hss_led`, `eq3configd`, `ssdpd`), the startup scripts
 `bin/hm_autoconf`, `bin/hm_deldev` and `bin/hm_startup`, `etc/`, `firmware/`, hmipserver
 (`opt/HMServer/HMIPServer.jar`, `opt/HMServer/coupling/`, `opt/HMServer/groups/`), `opt/HmIP/`
-and `licenses/`.
+and `licenses/`. Of the WebUI only the files addons read on a CCU, which openccu-lite installs at
+the CCU's paths: the device pictures (`src/webui/www/config/img/devices/`), the device
+descriptions with the two scripts that generate `DEVDB.tcl` from them
+(`src/webui/www_source/config/devdescr/`, `create_devdb_tcl.tcl`, `utf82ansi.py`), the
+translations (`src/webui/www/webui/js/lang/<lang>/translate.lang*.js`) and
+`src/webui/www/config/stringtable_de.txt`.
 
-Left out: the WebUI sources and the built WebUI (`src/webui/`, `www/`), `src/hss_led`,
+Left out: the rest of the WebUI sources and the built WebUI (`src/webui/`, `www/`), `src/hss_led`,
 `src/eq3configd` and `src/ssdpd`, `opt/HMServer/HMServer.jar` (the BidCos-only server
 openccu-lite never starts), the WebUI's FreeMarker pages `opt/HMServer/pages/` and the diagrams'
 `opt/HMServer/measurement/`, the prebuilt binaries and libraries under `bin/<platform>/` and
@@ -84,7 +89,15 @@ from `src/tcl_homematic`), OpenCCU-Base's own `.github/`, `tests/`, `Makefile`,
 `src/ssdpd`, `HMServer.jar` and HMServer's pages and measurement templates, which openccu-lite
 built or installed and then deleted from its image or never used. They were taken out the same
 day, before anything built from this repository, and `upstream`, the tags, `lite` and `meta` were
-replaced once. `paths.txt` is final since: a change to it would rewrite the history again, which the sync refuses.
+replaced once.
+
+**The second and final rewrite, on 2026-10-08:** the WebUI's files addons read on a CCU (the
+device pictures, the sources of `DEVDB.tcl`, the translations and the stringtable, see above)
+were added, so that openccu-lite can ship them at the CCU's paths. `upstream`, the tags, `lite`
+(with `3.89.11-lite.1`) and `meta` were replaced again (`upstream` `aaf1e4f` → `e17c620`,
+`3.89.11` `d3f25fb` → `d35b301`, 403 → 538 commits), again before anything was built from the
+replaced history. **`paths.txt` is final:** a change to it would rewrite the history again, which
+the sync refuses.
 
 ## Licence
 
