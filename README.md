@@ -1,5 +1,12 @@
 # openccu-lite-base
 
+> **Retired on 2026-10-09.** openccu-lite builds from OpenCCU-Base's own release archive again. The list of the paths it
+> uses is now in the openccu-lite repository, as
+> [`buildroot-external/package/openccu-base/openccu-base-paths.txt`](https://github.com/hobbyquaker/openccu-lite/blob/main/buildroot-external/package/openccu-base/openccu-base-paths.txt).
+> It has the same format as this repository's `paths.txt`, and the build removes everything else from the archive.
+> Nothing is built from this repository any more. Its history stays as a record: every commit links its original in
+> OpenCCU-Base.
+
 [OpenCCU-Base](https://github.com/OpenCCU/OpenCCU-Base) cut down to the paths that
 [openccu-lite](https://github.com/hobbyquaker/openccu-lite) builds from: the Homematic radio
 stack's daemons and libraries, the device types, the firmware files and the HMServer/HmIP Java
